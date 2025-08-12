@@ -1,0 +1,286 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Wingo 1 Minute Master Predictor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+/* Common Styles */
+body, html { margin:0; padding:0; font-family: Arial, sans-serif; height:100%; background:#111; color:#fff; }
+
+/* RGB Animated Text */
+@keyframes rgbText {
+  0% { color: red; }
+  33% { color: lime; }
+  66% { color: blue; }
+  100% { color: red; }
+}
+
+/* Login Screen */
+#loginScreen {
+  display:flex; align-items:center; justify-content:center; height:100%;
+  background: linear-gradient(270deg, red, orange, yellow, green, blue, indigo, violet);
+  background-size: 1400% 1400%;
+  animation: gradientBG 10s ease infinite;
+}
+@keyframes gradientBG {
+  0% {background-position:0% 50%;}
+  50% {background-position:100% 50%;}
+  100% {background-position:0% 50%;}
+}
+.login-box {
+  background: rgba(255,255,255,0.1);
+  padding: 20px; border-radius: 10px; backdrop-filter: blur(10px);
+  text-align: center; box-shadow: 0 0 15px rgba(0,0,0,0.5);
+}
+.login-box input {
+  padding:10px; border:none; border-radius:5px; margin:10px 0; width:200px;
+}
+.login-box button {
+  padding:10px 20px; border:none; border-radius:5px; background:#222; color:#fff; cursor:pointer;
+}
+
+/* Loading Screen */
+#loadingScreen {
+  display:none; align-items:center; justify-content:center; flex-direction:column;
+  height:100%; background:#000;
+}
+.progress-bar {
+  width:300px; max-width:80%; height:20px; background:#333; border-radius:10px; overflow:hidden; margin-top:15px;
+}
+.progress-fill {
+  height:100%; width:0%; background:linear-gradient(to right, red, yellow, lime, cyan, blue, violet);
+  transition: width 0.05s;
+}
+
+/* Main Page */
+#mainPage { display:none; padding:10px; }
+h1 { text-align:center; animation: rgbText 3s infinite; font-size:20px; }
+.search-bar { text-align:center; margin:15px 0; }
+.search-bar input { padding:8px; font-size:16px; width:200px; max-width:80%; }
+.search-bar button { padding:8px 16px; font-size:16px; cursor:pointer; margin-top:5px; }
+.box {
+  background:#1e1e1e; padding:10px; border-radius:6px; margin-top:15px;
+}
+table { border-collapse:collapse; width:100%; margin-top:10px; font-size:14px; }
+th, td { border:1px solid #444; padding:6px; text-align:center; }
+th { background:#333; }
+tr:nth-child(even) { background:#222; }
+.highlight { background: #006600 !important; }
+
+/* Smart Predictor Box */
+.predictor-box {
+  background:#222; padding:10px; border-radius:6px; text-align:center;
+  margin-bottom:15px; border: 2px solid #555;
+}
+.predictor-big { color: red; font-weight:bold; }
+.predictor-small { color: lime; font-weight:bold; }
+.confidence { font-size:12px; color:#ccc; }
+
+/* Mobile tweaks */
+@media (max-width:600px){
+  h1 { font-size:18px; }
+  th, td { font-size:12px; padding:4px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div id="loginScreen">
+  <div class="login-box">
+    <h2 style="animation: rgbText 3s infinite;">Login</h2>
+    <input type="password" id="password" placeholder="Enter Password">
+    <br>
+    <button onclick="checkLogin()">Login</button>
+  </div>
+</div>
+
+<!-- Loading Screen -->
+<div id="loadingScreen">
+  <h2 style="animation: rgbText 3s infinite;">Loading...</h2>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div id="progressText">0%</div>
+</div>
+
+<!-- Main Page -->
+<div id="mainPage">
+  <h1>Wingo 1 Minute Master Predictor</h1>
+
+  <div class="predictor-box" id="smartPredictor">
+    <div>Prediction: <span id="predictionText">Calculating...</span></div>
+    <div class="confidence" id="confidenceText">--</div>
+  </div>
+
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Enter 5 digits">
+    <button onclick="searchResult()">Search</button>
+    <div id="searchOutput"></div>
+  </div>
+
+  <div class="box">
+    <h2>Live Results</h2>
+    <table>
+      <thead><tr><th>Period</th><th>Number</th><th>Big/Small</th></tr></thead>
+      <tbody id="liveResults"></tbody>
+    </table>
+  </div>
+
+  <div class="box">
+    <h2>Predictions <button onclick="downloadExcel()">⬇ Excel</button></h2>
+    <table>
+      <thead><tr><th>Sequence</th><th>Next</th></tr></thead>
+      <tbody id="predictionResults"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const API_URL = "https://draw.ar-lottery01.com/WinGo/WinGo_1M/GetHistoryIssuePage.json";
+let liveResults = [];
+let predictions = [];
+
+function checkLogin(){
+  const pass = document.getElementById("password").value;
+  if(pass === "HACK.X"){
+    document.getElementById("loginScreen").style.display="none";
+    document.getElementById("loadingScreen").style.display="flex";
+    startLoading();
+  } else {
+    alert("Wrong password!");
+  }
+}
+
+function startLoading(){
+  let progress = 0;
+  const fill = document.getElementById("progressFill");
+  const text = document.getElementById("progressText");
+  const interval = setInterval(()=>{
+    progress += 2;
+    if(progress > 100) progress = 100;
+    fill.style.width = progress + "%";
+    text.textContent = progress + "%";
+    if(progress === 100){
+      clearInterval(interval);
+      setTimeout(()=>{
+        document.getElementById("loadingScreen").style.display="none";
+        document.getElementById("mainPage").style.display="block";
+        fetchData();
+        setInterval(fetchData, 5000);
+      }, 300);
+    }
+  }, 50);
+}
+
+async function fetchData(){
+  try {
+    const ts = Date.now();
+    const res = await fetch(`${API_URL}?ts=${ts}`);
+    const data = await res.json();
+    if(!data.data || !data.data.list) return;
+
+    const results = data.data.list.map(r=>({
+      period: r.issueNumber,
+      digit: r.number,
+      bigSmall: parseInt(r.number) >= 5 ? "Big":"Small"
+    }));
+
+    const latest = results.slice(0, 7);
+    if(!liveResults.length || liveResults[0].period !== latest[0].period){
+      liveResults = latest;
+      updateLiveTable();
+      addPrediction(results);
+      updateSmartPredictor(results);
+    }
+  } catch(err){
+    console.error(err);
+  }
+}
+
+function updateLiveTable(){
+  const tbody = document.getElementById("liveResults");
+  tbody.innerHTML = "";
+  liveResults.forEach((r,i)=>{
+    const tr = document.createElement("tr");
+    if(i === 0) tr.classList.add("highlight");
+    tr.innerHTML = `<td>${r.period}</td><td>${r.digit}</td><td>${r.bigSmall}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function addPrediction(results){
+  if(results.length < 6) return;
+  const seq = results.slice(1,6).map(r=>r.digit).join('');
+  const next = results[0].digit;
+
+  let existing = predictions.find(p=>p.seq === seq);
+  if(existing){
+    if(!existing.next.includes(next)){
+      existing.next.push(next);
+    }
+  } else {
+    predictions.unshift({ seq: seq, next: [next] });
+  }
+  updatePredictionTable();
+}
+
+function updatePredictionTable(){
+  const tbody = document.getElementById("predictionResults");
+  tbody.innerHTML = "";
+  predictions.forEach(p=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${p.seq}</td><td>${p.next.join(',')}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function searchResult(){
+  const val = document.getElementById("searchInput").value.trim();
+  const found = predictions.find(p=>p.seq === val);
+  document.getElementById("searchOutput").textContent = found ? `Next: ${found.next.join(',')}` : "Not found";
+}
+
+function updateSmartPredictor(results){
+  const trendCount = { Big:0, Small:0 };
+  results.slice(0,20).forEach(r=>trendCount[r.bigSmall]++);
+
+  let prediction = "Unclear";
+  let confidence = 50;
+  if(trendCount.Big/20 >= 0.6){ prediction = "Big"; confidence = Math.round((trendCount.Big/20)*100); }
+  else if(trendCount.Small/20 >= 0.6){ prediction = "Small"; confidence = Math.round((trendCount.Small/20)*100); }
+
+  const seq = results.slice(1,6).map(r=>r.digit).join('');
+  const seqMatch = predictions.find(p=>p.seq === seq);
+  if(seqMatch){
+    const bigCount = seqMatch.next.filter(n=>parseInt(n)>=5).length;
+    const smallCount = seqMatch.next.length - bigCount;
+    if(bigCount > smallCount && prediction === "Unclear"){ prediction = "Big"; confidence = 70; }
+    else if(smallCount > bigCount && prediction === "Unclear"){ prediction = "Small"; confidence = 70; }
+    else if(bigCount > smallCount && prediction === "Big"){ confidence = Math.min(100, confidence+10); }
+    else if(smallCount > bigCount && prediction === "Small"){ confidence = Math.min(100, confidence+10); }
+  }
+
+  document.getElementById("predictionText").textContent = prediction;
+  document.getElementById("predictionText").className = prediction === "Big" ? "predictor-big":"predictor-small";
+  document.getElementById("confidenceText").textContent = `Confidence: ${confidence}%`;
+}
+
+function downloadExcel(){
+  let csv = "Sequence,Next\n";
+  predictions.forEach(p=>{
+    csv += `${p.seq},${p.next.join(',')}\n`;
+  });
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "predictions.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
